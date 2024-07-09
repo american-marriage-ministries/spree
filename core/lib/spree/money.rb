@@ -2,6 +2,8 @@ require 'money'
 
 Money.locale_backend = :i18n
 
+Money.locale_backend = :i18n
+
 module Spree
   class Money
     class <<self
@@ -42,6 +44,7 @@ module Spree
         output.gsub!(/<\/?[^>]*>/, '') # we don't want wrap every element in span
         output = output.sub(' ', '&nbsp;').html_safe
       end
+
 
       output
     end
