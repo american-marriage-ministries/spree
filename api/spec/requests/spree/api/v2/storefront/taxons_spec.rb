@@ -72,7 +72,18 @@ describe 'Taxons Spec', type: :request do
 
       it 'returns taxons by ids' do
         expect(json_response['data'].size).to            eq(2)
-        expect(json_response['data'].pluck(:id).sort).to eq(taxons.map(&:id).sort.map(&:to_s))
+        expect(json_response['data'].pluck(:id).sort).to eq(taxons.map(&:id).map(&:to_s).sort)
+      end
+    end
+
+    context 'by name' do
+      before { get "/api/v2/storefront/taxons?filter[name]=#{taxons.last.name}" }
+
+      it_behaves_like 'returns 200 HTTP status'
+
+      it 'returns taxonx by name' do
+        expect(json_response['data'].size).to eq(1)
+        expect(json_response['data'].last['attributes']['name']).to eq(taxons.last.name)
       end
     end
 

@@ -48,7 +48,8 @@ module Spree
       validates :cost_price
       validates :price
     end
-    validates :sku, uniqueness: { conditions: -> { where(deleted_at: nil) }, case_sensitive: false }, allow_blank: true
+    validates :sku, uniqueness: { conditions: -> { where(deleted_at: nil) }, case_sensitive: false },
+                    allow_blank: true, unless: :disable_sku_validation?
 
     after_create :create_stock_items
     after_create :set_master_out_of_stock, unless: :is_master?
@@ -102,6 +103,11 @@ module Spree
 
     self.whitelisted_ransackable_associations = %w[option_values product prices default_price]
     self.whitelisted_ransackable_attributes = %w[weight sku]
+    self.whitelisted_ransackable_scopes = %i(product_name_or_sku_cont)
+
+    def self.product_name_or_sku_cont(query)
+      joins(:product).where("#{Product.table_name}.name LIKE :query OR sku LIKE :query", query: "%#{query}%")
+    end
 
     def available?
       !discontinued? && product.available?
@@ -116,15 +122,7 @@ module Spree
     end
 
     def options_text
-      values = option_values.sort do |a, b|
-        a.option_type.position <=> b.option_type.position
-      end
-
-      values.to_a.map! do |ov|
-        "#{ov.option_type.presentation}: #{ov.presentation}"
-      end
-
-      values.to_sentence(words_connector: ', ', two_words_connector: ', ')
+      Spree::Variants::OptionsPresenter.new(self).to_sentence
     end
 
     # Default to master name
@@ -330,6 +328,10 @@ module Spree
 
     def clear_in_stock_cache
       Rails.cache.delete(in_stock_cache_key)
+    end
+
+    def disable_sku_validation?
+      Spree::Config[:disable_sku_validation]
     end
   end
 end

@@ -3,7 +3,6 @@ import * as React from 'react'
 import PropTypes from 'prop-types'
 import { graphql } from 'gatsby'
 import RehypeReact from 'rehype-react'
-import { DiscussionEmbed } from 'disqus-react'
 
 // --- Components
 import Layout from '../components/Layout'
@@ -20,6 +19,8 @@ import Params from '../components/helpers/Params'
 import Table from '../components/base/Table'
 import Td from '../components/base/Td'
 import Th from '../components/base/Th'
+import Toc from '../components/Toc'
+import MarkdownPageFooter from '../components/MarkdownPageFooter'
 
 /**
  * Helpers
@@ -50,11 +51,6 @@ const renderAst = new RehypeReact({
 
 export default function Template({ data }) {
   const { guide } = data
-  const disqusShortname = 'spree-guides'
-  const disqusConfig = {
-    identifier: data.id,
-    title: guide.frontmatter.title
-  }
 
   let pageTitle = guide.frontmatter.title
   if (guide.fields.rootSection) {
@@ -75,12 +71,16 @@ export default function Template({ data }) {
       activeSection={guide.fields.section}
       activeRootSection={guide.fields.rootSection}
     >
-      <article className="mt2">
+      {guide.headings.length > 0 && <Toc headings={guide.headings} />}
+      <article className="mt2 nested-links">
         <H1>{guide.frontmatter.title}</H1>
         {renderAst(guide.htmlAst)}
-        {!guide.fields.isIndex &&
-          <DiscussionEmbed shortname={disqusShortname} config={disqusConfig} />
-        }
+        <MarkdownPageFooter
+          section={guide.fields.section}
+          title={guide.frontmatter.title}
+          group={data.sidebarNav.group}
+          isIndex={guide.fields.isIndex}
+        />
       </article>
     </Layout>
   )
@@ -122,6 +122,10 @@ export const pageQuery = graphql`
       }
     }
     guide: markdownRemark(id: { eq: $id }) {
+      headings {
+        depth
+        value
+      }
       fields {
         section
         rootSection
